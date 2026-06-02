@@ -16,4 +16,4 @@ WORKDIR /app
 
 COPY --from=builder /app /app
 
-CMD ["-m", "uvicorn", "idletest:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["-m", "uvicorn", "idletest_app:app", "--host", "0.0.0.0", "--port", "8080"]
