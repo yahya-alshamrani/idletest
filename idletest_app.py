@@ -10,8 +10,23 @@ from fastapi.responses import JSONResponse
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+INGRESS_GATEWAY_ENABLED_ENV = "INGRESS_GATEWAY_ENABLED"
 INGRESS_GATEWAY_HOST_ENV = "INGRESS_GATEWAY_HOST"
 INGRESS_GATEWAY_PATH_ENV = "INGRESS_GATEWAY_PATH"
+
+
+def boolean_environment_variable(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+
+    normalized_value = value.strip().lower()
+    if normalized_value in {"1", "true", "yes", "on"}:
+        return True
+    if normalized_value in {"0", "false", "no", "off", ""}:
+        return False
+
+    raise RuntimeError(f"{name} must be one of: true, false, 1, 0, yes, no, on, off")
 
 
 def required_environment_variable(name: str) -> str:
@@ -22,8 +37,9 @@ def required_environment_variable(name: str) -> str:
     return value.strip()
 
 
-GATEWAY_HOST = required_environment_variable(INGRESS_GATEWAY_HOST_ENV)
-GATEWAY_PATH = required_environment_variable(INGRESS_GATEWAY_PATH_ENV)
+INGRESS_GATEWAY_ENABLED = boolean_environment_variable(INGRESS_GATEWAY_ENABLED_ENV)
+GATEWAY_HOST = required_environment_variable(INGRESS_GATEWAY_HOST_ENV) if INGRESS_GATEWAY_ENABLED else ""
+GATEWAY_PATH = required_environment_variable(INGRESS_GATEWAY_PATH_ENV) if INGRESS_GATEWAY_ENABLED else ""
 
 app = FastAPI()
 
@@ -98,7 +114,7 @@ async def rewrite_redirects_for_gateway(request: Request, call_next):
     response = await call_next(request)
 
     location = response.headers.get("location")
-    if location and 300 <= response.status_code < 400:
+    if INGRESS_GATEWAY_ENABLED and location and 300 <= response.status_code < 400:
         response.headers["location"] = gateway_redirect_location(location, request)
 
     return response

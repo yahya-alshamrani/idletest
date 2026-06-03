@@ -21,10 +21,12 @@ spec:
       - image: ruh.ocir.io/axgo6vn5jkra/yalshamrani/idletest:v2.3
         name: idletest
         env:
+        - name: INGRESS_GATEWAY_ENABLED
+          value: "true"
         - name: INGRESS_GATEWAY_HOST
-          value: myapp.local
+          value: gateway.example.com
         - name: INGRESS_GATEWAY_PATH
-          value: /idletest
+          value: /xyz
         ports:
         - containerPort: 8080
         resources: {}
