@@ -15,15 +15,15 @@ INGRESS_GATEWAY_HOST_ENV = "INGRESS_GATEWAY_HOST"
 INGRESS_GATEWAY_PATH_ENV = "INGRESS_GATEWAY_PATH"
 
 
-def boolean_environment_variable(name: str, default: bool = False) -> bool:
+def required_boolean_environment_variable(name: str) -> bool:
     value = os.getenv(name)
-    if value is None:
-        return default
+    if value is None or not value.strip():
+        raise RuntimeError(f"{name} environment variable must be defined")
 
     normalized_value = value.strip().lower()
     if normalized_value in {"1", "true", "yes", "on"}:
         return True
-    if normalized_value in {"0", "false", "no", "off", ""}:
+    if normalized_value in {"0", "false", "no", "off"}:
         return False
 
     raise RuntimeError(f"{name} must be one of: true, false, 1, 0, yes, no, on, off")
@@ -37,7 +37,7 @@ def required_environment_variable(name: str) -> str:
     return value.strip()
 
 
-INGRESS_GATEWAY_ENABLED = boolean_environment_variable(INGRESS_GATEWAY_ENABLED_ENV)
+INGRESS_GATEWAY_ENABLED = required_boolean_environment_variable(INGRESS_GATEWAY_ENABLED_ENV)
 GATEWAY_HOST = required_environment_variable(INGRESS_GATEWAY_HOST_ENV) if INGRESS_GATEWAY_ENABLED else ""
 GATEWAY_PATH = required_environment_variable(INGRESS_GATEWAY_PATH_ENV) if INGRESS_GATEWAY_ENABLED else ""
 

@@ -38,7 +38,8 @@ curl -i http://localhost:8080/idle=601
 The app supports two deployment modes:
 
 - Standalone mode: the app is reached directly as `HOST/idle={seconds}`. This
-  is the default, and no gateway environment variables are required.
+  mode uses `INGRESS_GATEWAY_ENABLED=false`, and no gateway host or path
+  environment variables are required.
 - Gateway route mode: the app is exposed behind an ingress gateway under an
   external host and path prefix. Enable this mode with
   `INGRESS_GATEWAY_ENABLED=true`.
@@ -50,14 +51,16 @@ prefix.
 
 | Variable | Required | Example | Description |
 | --- | --- | --- | --- |
-| `INGRESS_GATEWAY_ENABLED` | No | `true` | Enables gateway-aware redirect rewriting. Defaults to standalone mode when unset or `false`. Accepted true values are `true`, `1`, `yes`, and `on`. Accepted false values are `false`, `0`, `no`, `off`, and blank. |
+| `INGRESS_GATEWAY_ENABLED` | Yes | `true` | Enables gateway-aware redirect rewriting. Set to `false` for standalone mode. Accepted true values are `true`, `1`, `yes`, and `on`. Accepted false values are `false`, `0`, `no`, and `off`. |
 | `INGRESS_GATEWAY_HOST` | Only when gateway mode is enabled | `myapp.local` | External gateway host used in redirect `Location` headers. It may include a scheme, such as `https://myapp.local`. |
 | `INGRESS_GATEWAY_PATH` | Only when gateway mode is enabled | `/idletest` | External gateway path prefix. Use `/` when the app is exposed at the gateway root. |
 
-When `INGRESS_GATEWAY_ENABLED=true`, missing host or path variables cause
-startup errors similar to:
+Missing `INGRESS_GATEWAY_ENABLED` always causes a startup error. When
+`INGRESS_GATEWAY_ENABLED=true`, missing host or path variables also cause
+startup errors. Examples:
 
 ```text
+INGRESS_GATEWAY_ENABLED environment variable must be defined
 INGRESS_GATEWAY_HOST environment variable must be defined
 INGRESS_GATEWAY_PATH environment variable must be defined
 ```
@@ -97,7 +100,7 @@ Install dependencies and start the application on port `8080`:
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m uvicorn idletest_app:app --host 0.0.0.0 --port 8080
+INGRESS_GATEWAY_ENABLED=false python -m uvicorn idletest_app:app --host 0.0.0.0 --port 8080
 ```
 
 Then hit the app:
@@ -112,7 +115,9 @@ Build and run the image:
 
 ```bash
 docker build -f Containerfile -t idletest:local .
-docker run --rm -p 8080:8080 idletest:local
+docker run --rm -p 8080:8080 \
+  -e INGRESS_GATEWAY_ENABLED=false \
+  idletest:local
 ```
 
 Then hit the app:
